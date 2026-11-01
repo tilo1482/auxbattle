@@ -25,6 +25,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#07070f}
+html{background:linear-gradient(180deg,#120f2e 0%,#0a0a16 50%,#05050b 100%) fixed;min-height:100lvh}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","SF Pro Display","Segoe UI",Roboto,sans-serif;
   background:#07070f;color:var(--text);overflow:hidden;
@@ -32,7 +33,7 @@ body{
 }
 
 /* ---------- LIVING BACKDROP ---------- */
-.bg{position:fixed;inset:0;z-index:0;overflow:hidden;
+.bg{position:fixed;left:0;right:0;top:-120px;bottom:-240px;z-index:0;overflow:hidden;
   background:radial-gradient(120% 90% at 50% 0%,#120f2e 0%,#0a0a16 55%,#05050b 100%)}
 .orb{position:absolute;border-radius:50%;will-change:transform,opacity;opacity:calc(.62 + var(--beat,0)*.4)}
 #beatBtn{margin-top:12px;max-width:92%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:11px 20px;border-radius:999px;font-size:.92rem;font-weight:700;cursor:pointer;color:#fff;align-self:center}
@@ -66,7 +67,7 @@ body{
   75%{transform:translate(30vw,-40vh) scale(1.08)}
   100%{transform:translate(0,0) scale(1)}}
 
-.screen{display:none;height:100vh;height:100dvh;flex-direction:column;position:relative;z-index:1;
+.screen{display:none;height:100vh;height:100lvh;flex-direction:column;position:relative;z-index:1;
   padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 .screen.active{display:flex}
 
@@ -1328,6 +1329,15 @@ const SPOTIFY_CLIENT_ID = "";
 document.getElementById("skipBtn").onclick = () => { if (!busy) skipCard(); };
 document.getElementById("playAgainBtn").onclick = startGame;
 document.getElementById("newGameBtn").onclick = () => showScreen("setup");
+/* iOS standalone sometimes launches with a short viewport; force a re-layout when it settles */
+(function(){
+  function kick(){ var b=document.body; b.style.transform='translateZ(0)'; void b.offsetHeight; b.style.transform=''; window.scrollTo(0,0); }
+  window.addEventListener('pageshow',kick);
+  window.addEventListener('resize',kick);
+  window.addEventListener('orientationchange',kick);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) kick(); });
+  [60,300,900].forEach(function(t){ setTimeout(kick,t); });
+})();
 </script>
 </body>
 </html>
