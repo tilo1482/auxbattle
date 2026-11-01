@@ -187,8 +187,8 @@ button.chip:active{transform:scale(.93)}
   box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,255,255,.12)}
 .card-text{font-size:clamp(1.5rem,6vw,2.15rem);font-weight:800;line-height:1.25;text-shadow:0 2px 16px rgba(0,0,0,.35)}
 .card-note{position:absolute;right:-50px;bottom:-28px;font-size:15rem;line-height:1;pointer-events:none;
-  opacity:calc(.07 + var(--beat,0)*.07);transform-origin:50% 60%;will-change:transform,opacity;
-  transform:rotate(calc(-12deg + var(--beat,0)*5deg)) translateY(calc(var(--beat,0)*-6px)) scale(calc(1 + var(--beat,0)*.07))}
+  opacity:.1;transform-origin:50% 60%;will-change:transform;
+  transform:translateX(calc(var(--sway,0)*16px)) rotate(calc(-12deg + var(--sway,0)*3deg))}
 .card-hint{position:absolute;bottom:16px;color:var(--muted);font-size:.74rem}
 .players-area{padding:2px 14px 22px}
 .players-grid{display:grid;gap:10px}
@@ -380,7 +380,7 @@ button.chip:active{transform:scale(.93)}
 <!-- GAME -->
 <div id="game" class="screen">
   <div class="topbar">
-    <span id="deckStatus" class="glass chip"></span>
+    <span id="deckStatus" aria-hidden="true"></span>
     <button id="homeBtn" class="home-logo" aria-label="Return to home screen"><svg viewBox="0 0 170 130" aria-hidden="true"><defs><linearGradient id="barBlendGame" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="170" y2="0"><stop offset="0" stop-color="#7c5cff"/><stop offset=".5" stop-color="#b86ad8"/><stop offset="1" stop-color="#ff5c8a"/></linearGradient></defs><g fill="url(#barBlendGame)" fill-opacity=".88"><rect x="0.0" y="42" width="16" height="46" rx="8"/><rect x="25.67" y="28" width="16" height="74" rx="8"/><rect x="51.33" y="14" width="16" height="102" rx="8"/><rect x="77.0" y="0" width="16" height="130" rx="8" fill="#fff" fill-opacity="1"/><rect x="102.67" y="14" width="16" height="102" rx="8"/><rect x="128.33" y="28" width="16" height="74" rx="8"/><rect x="154.0" y="42" width="16" height="46" rx="8"/></g></svg></button>
     <button id="skipBtn" class="glass chip">Skip card</button>
   </div>
@@ -809,7 +809,6 @@ function nextCard(promoted) {
   void cardEl.offsetWidth; // restart animation
   cardEl.style.animation = promoted ? "none" : "";
   document.getElementById("cardText").textContent = state.currentCard;
-  document.getElementById("deckStatus").textContent = state.cardsToWin + " cards to win";
 }
 
 // custom player names (long-press a player box to set one); saved on this device
@@ -1312,9 +1311,10 @@ const SPOTIFY_CLIENT_ID = "";
   }
 
   // ---------- render loop: tempo-locked swell + smooth color tween ----------
+  let sway = 0;
   function frame(t) {
     const dt = Math.min(.05, (t - lastFrame) / 1000 || .016); lastFrame = t;
-    let target = 0;
+    let target = 0, swT = 0;
     if (playing) {
       let phase;
       if (bpm) {
@@ -1322,7 +1322,10 @@ const SPOTIFY_CLIENT_ID = "";
         phase = (((anchorPos + (t - anchorT)) / 1000) * bps) % 1;
       } else phase = (t / 4000) % 1;                           // no tempo found: slow ambient breathing
       target = Math.pow(.5 + .5 * Math.cos(phase * 2 * Math.PI), 2);
+      swT = Math.sin(phase * 2 * Math.PI);                     // side-to-side sway for the music note
     }
+    sway += (swT - sway) * (1 - Math.exp(-dt * 5));
+    root.style.setProperty("--sway", sway.toFixed(3));
     env += (target - env) * (1 - Math.exp(-dt * 6));
     root.style.setProperty("--beat", (env * .9).toFixed(3));
     const k = 1 - Math.exp(-dt * 1.4);
@@ -1338,7 +1341,7 @@ const SPOTIFY_CLIENT_ID = "";
   function stop() {
     on = false; setLS("aux_sp_on", "0");
     clearTimeout(pollT); cancelAnimationFrame(raf);
-    root.style.removeProperty("--beat"); ["--o1", "--o2", "--o3"].forEach(v => root.style.removeProperty(v));
+    root.style.removeProperty("--beat"); root.style.removeProperty("--sway"); sway = 0; ["--o1", "--o2", "--o3"].forEach(v => root.style.removeProperty(v));
     curCols = DEFAULTS.map(c => c.slice()); tgtCols = DEFAULTS.map(c => c.slice()); env = 0; trackId = null; song = ""; playing = false;
     paintLabel();
   }
